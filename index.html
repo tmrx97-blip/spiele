@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDR-Quiz Moderator-Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        .start-screen {
+            text-align: center;
+        }
+        .start-screen h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        .start-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .btn {
+            padding: 18px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .level-display {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .level-info {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .question-counter {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .question-box {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .question-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .hints {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 25px;
+        }
+        .hint {
+            margin: 10px 0;
+            font-size: 1.1em;
+            color: #856404;
+        }
+        .hint-label {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .option {
+            padding: 20px;
+            background: white;
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .option.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .explanation {
+            background: #e7f3ff;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-top: 25px;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #333;
+        }
+        .explanation-title {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .level-controls {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            justify-content: center;
+            border-top: 2px solid #dee2e6;
+            padding-top: 25px;
+            margin-top: 25px;
+        }
+        .btn-level {
+            padding: 12px 25px;
+            font-size: 1em;
+            flex: 1;
+            max-width: 200px;
+        }
+        .pause-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        .pause-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .note-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            color: #666;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .saved-notes {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+        }
+        .saved-notes h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .saved-note {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin: 8px 0;
+            font-size: 0.9em;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 DDR-Quiz Moderator-Tool</h1>
+            <div class="subtitle">Für Senioren im Osten Deutschlands | Mitte 70 bis Mitte 80</div>
+        </div>
+
+```
+    <div class="content">
+        <!-- Start Screen -->
+        <div id="start-screen" class="start-screen">
+            <h2>Quiz starten</h2>
+            <div class="start-buttons">
+                <button class="btn btn-primary" onclick="startNew()">🆕 Neu starten</button>
+                <button class="btn btn-secondary" onclick="resumeSlot(1)" id="resume-opa">📖 Fortsetzen bei Pause EINS (Opa)</button>
+                <button class="btn btn-secondary" onclick="resumeSlot(2)" id="resume-omi">📖 Fortsetzen bei Pause ZWEI (Omi)</button>
+            </div>
+            <div id="saved-notes-display" class="saved-notes hidden">
+                <h4>Gespeicherte Notizen:</h4>
+                <div id="notes-content"></div>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <div class="level-display">
+                <div class="level-info">Level: <span id="current-level">75</span></div>
+                <div class="question-counter">Frage <span id="current-question">1</span> von 20</div>
+            </div>
+
+            <div class="question-box">
+                <div class="question-text" id="question-text"></div>
+                
+                <div class="hints">
+                    <div class="hint"><span class="hint-label">💡 Hinweis 1:</span><span id="hint-1"></span></div>
+                    <div class="hint"><span class="hint-label">💡 Hinweis 2:</span><span id="hint-2"></span></div>
+                    <div class="hint"><span class="hint-label">💡 Hinweis 3:</span><span id="hint-3"></span></div>
+                </div>
+
+                <div class="options" id="options"></div>
+                
+                <div id="explanation-box" class="hidden"></div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-secondary" onclick="showPauseModal()" style="flex: 1;">⏸️ Pause</button>
+                <button class="btn btn-primary hidden" onclick="nextQuestion()" id="next-btn" style="flex: 1;">Weiter ➡️</button>
+            </div>
+
+            <div class="level-controls" id="level-controls">
+                <button class="btn btn-secondary btn-level" onclick="adjustLevel(-10)" id="level-down">⬇️ Level -10</button>
+                <button class="btn btn-secondary btn-level" onclick="adjustLevel(0)">➡️ Keine Änderung</button>
+                <button class="btn btn-secondary btn-level" onclick="adjustLevel(10)" id="level-up">⬆️ Level +10</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pause Modal -->
+<div id="pause-modal" class="pause-modal hidden">
+    <div class="modal-content">
+        <h3>Pause - Notiz speichern</h3>
+        <div class="note-info">
+            Level: <strong id="pause-level"></strong> | Frage: <strong id="pause-question"></strong>
+        </div>
+        <textarea id="note-text" placeholder="Ihre Notizen hier eingeben..."></textarea>
+        <div class="pause-buttons">
+            <button class="btn btn-primary" onclick="savePause(1)">💾 Speichern als EINS (Opa)</button>
+            <button class="btn btn-primary" onclick="savePause(2)">💾 Speichern als ZWEI (Omi)</button>
+            <button class="btn btn-secondary" onclick="closePauseModal()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {level: 45, q: "Wie hieß das kleine, leichte Auto aus Duroplast, das jeder in der DDR kannte?", hints: ["Es wurde liebevoll 'Rennpappe' genannt", "Hergestellt wurde es in Zwickau", "Mit 26 PS und Zweitaktmotor war es das Kultauto schlechthin"], options: ["Wartburg", "Trabant", "Lada", "Skoda"], correct: 1, explanation: "Der Trabant! Jeder nannte ihn einfach 'Trabi'. Aus Duroplast gefertigt - ein Material aus Baumwolle und Kunstharz - war er leicht und rostfrei. Die Wartezeit betrug oft 10-15 Jahre! Man bestellte ihn zur Geburt des Kindes und bekam ihn zum 18. Geburtstag. Der Zweitaktmotor qualmte zwar gewaltig, aber der Trabi war bezahlbar und für viele das einzige Auto ihres Lebens. Selbst heute noch sieht man die bunten Trabis auf Oldtimer-Treffen - ein echtes Stück Zeitgeschichte auf vier Rädern!"},
+        
+        {level: 55, q: "Welche Limonade aus Thüringen galt als die Cola des Ostens?", hints: ["Der Slogan war: 'Bringt's'", "Sie hatte einen etwas anderen Geschmack als westliche Cola", "Die Marke gibt es heute wieder zu kaufen"], options: ["Club Cola", "Vita Cola", "Sinalco", "Brause"], correct: 1, explanation: "Vita Cola! 1957 in Thüringen erfunden, wurde sie zur Kult-Limo der DDR. Der Geschmack war einzigartig - etwas süßer und würziger als Coca-Cola. An heißen Sommertagen stand man Schlange am Kiosk für eine eiskalte Vita Cola. Nach der Wende verschwand sie zunächst, aber die Nachfrage war so groß, dass sie 1994 wieder produziert wurde. Viele schwören bis heute: Vita Cola schmeckt besser als jede andere Cola! Ein Stück Heimat in der Flasche, das Erinnerungen weckt an Pioniernachmittage und Ausflüge zur Ostsee."},
+        
+        {level: 65, q: "Wie nannte man die staatliche Handelsorganisation mit ihren Kaufhäusern und Gaststätten?", hints: ["Die Abkürzung hatte zwei Buchstaben", "Dort gab es von Lebensmitteln bis Kleidung alles", "Auch die Gaststätten trugen diesen Namen"], options: ["Konsum", "HO", "Kaufhalle", "Centrum"], correct: 1, explanation: "Die HO - Handelsorganisation! In jeder Stadt gab es HO-Kaufhäuser und HO-Gaststätten. Die großen HO-Warenhäuser waren wie kleine Konsumtempel - mehrstöckig mit Rolltreppen, da gab es wirklich alles! Besonders beliebt waren die HO-Gaststätten für den Sonntagsbraten oder ein Bier nach Feierabend. Die Verkäuferinnen trugen meist weiße Kittel und kannten ihre Stammkunden. Bei der HO zu arbeiten galt als guter Job. Nach der Wende wurden fast alle geschlossen - ein ganzes Stück DDR-Handelskultur verschwand damit. Aber die Erinnerung an den Geruch der HO-Kaufhäuser - das vergisst man nie!"},
+        
+        {level: 75, q: "Welche Waschmaschine mit dem charakteristischen runden Bullauge stand in fast jedem DDR-Haushalt?", hints: ["Die Modellbezeichnung enthielt Zahlen", "Sie hatte ein großes rundes Fenster vorne", "Man musste sie oft von Raum zu Raum rollen"], options: ["WM 66", "Bauknecht", "Siemens", "Foron"], correct: 0, explanation: "Die WM 66! Diese Trommelwaschmaschine war ein Segen für jede Hausfrau. Das charakteristische runde Bullauge - da konnte man der Wäsche beim Waschen zusehen! Die Maschine war mobil auf Rollen, weil sie meist in der Küche oder im Bad angeschlossen wurde. Der Waschtag war ein Ereignis: Vormittags die Kochwäsche, nachmittags die Buntwäsche. Die WM 66 lief und lief - manche Maschinen halten bis heute! Der Geruch der frischen Wäsche und das Brummen der Maschine - das gehörte zum Alltag wie das tägliche Brot. Ein Luxus, den nicht jeder hatte, aber wer eine WM 66 besaß, war stolz darauf!"},
+        
+        {level: 85, q: "Wie hieß die legendäre Kamera aus Dresden, die sogar in den Westen exportiert wurde?", hints: ["Sie war eine Spiegelreflexkamera", "Der Name war ein Kunstwort", "Dresden war berühmt für Feinmechanik"], options: ["Exa", "Praktica", "Pentacon", "Exakta"], correct: 1, explanation: "Die Praktica! Diese Spiegelreflexkameras aus dem VEB Pentacon in Dresden waren Weltklasse. Präzise Mechanik, robustes Gehäuse - damit wurden Generationen von Familienfesten fotografiert. Wer eine Praktica besaß, hatte ein echtes Schmuckstück. Sie wurde sogar in über 100 Länder exportiert und brachte Devisen. Fotografen schätzten die Qualität der Objektive und die Zuverlässigkeit. Jeder Klick des Auslösers war ein mechanisches Kunstwerk. Die Praktica hielt Jahrzehnte - viele funktionieren heute noch einwandfrei! Mit ihr wurden unzählige Erinnerungen festgehalten: die erste Jugendweihe, der Sommerurlaub an der Ostsee, die Hochzeit der Kinder. Ein Stück Dresdner Ingenieurskunst, das bis heute begeistert."},
+        
+        {level: 95, q: "Welches spezielle Gemüse wurde in der DDR häufig als 'Goldbroiler-Beilage' serviert und kam meist aus der Dose?", hints: ["Es handelt sich um eine Kohlart", "Oft mit Mayonnaise zubereitet", "Der typische DDR-Name unterschied sich vom westdeutschen"], options: ["Weißkohl", "Krautsalat", "Kappes", "Sauerkraut"], correct: 1, explanation: "Krautsalat! In der DDR war das die klassische Bezeichnung für den Weißkohlsalat, der im Westen einfach 'Krautsalat' oder 'Weißkrautsalat' hieß. Die Dose mit dem vorgefertigten Krautsalat stand in jedem Haushalt - praktisch und haltbar. Beim Goldbroiler (dem DDR-Brathähnchen) durfte der Krautsalat nicht fehlen! Viele machten ihn auch selbst: Weißkohl hobeln, salzen, mit Mayonnaise oder Essig-Öl-Dressing anmachen. Der leicht säuerliche Geschmack passte perfekt zum fettigen Broiler. In den Broiler-Gaststätten an jeder Ecke war der Krautsalat Standardbeilage. Heute noch verbinden viele mit dem Geruch von frischem Krautsalat die Erinnerung an den sonntäglichen Broiler-Besuch - ein kulinarisches Stück DDR-Alltag!"},
+        
+        {level: 45, q: "Welches Abendgruß-Programm brachte allabendlich Millionen Kinder ins Bett?", hints: ["Es begann um 18:50 Uhr", "Eine kleine Figur mit Zipfelmütze", "Die Melodie kennt jeder noch heute"], options: ["Pittiplatsch", "Sandmännchen", "Meister Nadelöhr", "Schnatterinchen"], correct: 1, explanation: "Unser Sandmännchen! Seit 1959 jeden Abend pünktlich um 18:50 Uhr - das war heilig! Die Kinder saßen gebannt vor dem Fernseher. Das Sandmännchen kam mit verschiedenen Fahrzeugen: Rakete, Auto, Hubschrauber - immer fantasievoll! Am Ende streute es den Schlafsand aus und alle Kinder gingen brav ins Bett. Die Geschichten mit Pittiplatsch, Schnatterinchen und Moppi waren zuckersüß. Das Abendgruß-Lied 'Sandmann, lieber Sandmann' kennt jeder auswendig! Nach der Wende gab es zwei Sandmännchen - Ost und West - aber das DDR-Sandmännchen setzte sich durch. Bis heute läuft es! Ein Stück Kindheit, das Generationen verbindet."},
+        
+        {level: 55, q: "Wie hieß der beliebte Sekt aus Freyburg, der zu jedem Fest gehörte?", hints: ["Die Marke gibt es heute noch", "Der Name stammt aus einem Märchen", "Die Kellerei liegt an der Unstrut"], options: ["Goldeck", "Rotkäppchen", "Kupferberg", "Henkell"], correct: 1, explanation: "Rotkäppchen Sekt! Aus der Sektkellerei Freyburg an der Unstrut kam der Festtags-Sekt schlechthin. Ob Silvester, Jugendweihe, Hochzeit oder runder Geburtstag - ohne Rotkäppchen war kein Fest komplett! Die grünen Flaschen mit dem roten Käppchen auf dem Etikett standen überall bereit. Der Sekt war erschwinglich und schmeckte gut - halbtrocken oder süß. Das Knallen der Korken, das Zischen, die perlenden Bläschen - das war Lebensfreude! Die Sektkellereien in Freyburg waren ein Stolz der Region. Nach der Wende blieb Rotkäppchen erfolgreich und ist heute Deutschlands meistverkaufter Sekt. Ein echtes Erfolgsprodukt, das die Wende überlebt hat!"},
+        
+        {level: 65, q: "Welches Motorrad mit 50ccm war der Traum vieler junger Leute?", hints: ["Hergestellt wurde es in Suhl", "Der Name erinnert an einen Vogel", "Es gab sie in verschiedenen Farben"], options: ["MZ", "Simson Schwalbe", "Jawa", "Hercules"], correct: 1, explanation: "Die Simson Schwalbe! Mit ihrem charakteristischen Design und dem kultigen Vogel-Namen war sie DAS Jugend-Gefährt. Blau, grün, rot - jede Farbe hatte ihren Charme! Mit 50ccm brauchte man keinen Motorradführerschein, nur den Moped-Schein. Das Gefühl von Freiheit, wenn man damit über die Landstraße tuckerte - unbezahlbar! Die Schwalbe war robust, einfach zu reparieren und hielt ewig. Viele bastelten an ihr herum, frisierten sie heimlich auf. Der charakteristische Sound des Zweitakters war kilometerweit zu hören. Heute sind gut erhaltene Schwalben Sammlerstücke! Wer damals eine Schwalbe hatte, war wer. Sie steht bis heute für Jugend, Freiheit und Aufbruch."},
+        
+        {level: 75, q: "Welche Unterhaltungssendung moderierte Helga Hahnemann in bunten Kostümen?", hints: ["Die Show lief von 1972 bis 1992", "Der Name beschreibt die Vielfalt", "Es gab Musik, Tanz und Artistik"], options: ["Rumpelkammer", "Ein Kessel Buntes", "Da liegt Musike drin", "Schlagerstudio"], correct: 1, explanation: "Ein Kessel Buntes! Die Unterhaltungsshow des DDR-Fernsehens schlechthin. Jeden Samstagabend saß die ganze Familie gebannt vor dem Fernseher. Helga Hahnemann in ihren fantastischen Kostümen - mal als Clown, mal elegant - führte mit Charme und Witz durch die Show. Es gab alles: Schlagerstars wie Frank Schöbel und Chris Doerk, Artisten aus der Sowjetunion, Tänzerinnen in glitzernden Kostümen, Orchester und Chöre. Die Aufzeichnungen fanden im Friedrichstadt-Palast statt. 'Ein Kessel Buntes' war hochwertige Unterhaltung - manchmal etwas steif, aber immer ein Ereignis! Helga Hahnemann wurde zur Legende. Die Show lief bis 1992 weiter - über die Wende hinaus! Ein Stück Fernsehgeschichte."},
+        
+        {level: 85, q: "Welche Nähmaschine aus Wittenberge war legendär robust und hielt Generationen?", hints: ["Der Markenname bedeutet 'Wahrheit'", "Sie wurde in einem charakteristischen Koffer geliefert", "Viele Frauen nähten damit die Kleidung der ganzen Familie"], options: ["Singer", "Veritas", "Pfaff", "Privileg"], correct: 1, explanation: "Die Veritas! Diese mechanischen Nähmaschinen aus dem VEB Nähmaschinenwerk Wittenberge waren unverwüstlich. 'Veritas' kommt vom lateinischen 'veritas' - Wahrheit - und das war Programm: ehrliche, solide Qualität! Die Maschinen kamen im typischen Hartschalenkoffer, den man aufklappen und als Nähplatz nutzen konnte. Viele Frauen nähten alles selbst: Gardinen, Kleider, Kindersachen, sogar Mäntel! Eine Veritas war eine Anschaffung fürs Leben - und darüber hinaus! Sie wurde vererbt von Generation zu Generation. Das rhythmische Rattern beim Nähen, der Geruch von Maschinenöl - das gehörte zum Alltag. Selbst heute nähen noch viele mit ihrer alten Veritas. Ein Stück Ingenieurskunst und Frauenpower!"},
+        
+        {level: 95, q: "Wie hieß das elektrische Handrührgerät, das in keiner Küche fehlen durfte?", hints: ["Die Buchstabenkombination war kurz und prägnant", "Die Zahl im Namen war 28", "Es hatte verschiedene Aufsätze zum Rühren"], options: ["AKA", "RG 28", "Quirl 2000", "Elektra"], correct: 1, explanation: "Das RG 28 Rührgerät! RG stand für 'Rührgerät' - praktisch und unkompliziert! Mit diesem elektrischen Handmixer wurde in DDR-Küchen gerührt, was das Zeug hielt. Der charakteristische summende Sound beim Teig rühren - jeder kannte ihn! Es gab verschiedene Aufsätze: Quirle für Sahne, Knethaken für Brotteig, Rührbesen für Kuchenteig. Das RG 28 schaffte alles! Am Wochenende, wenn Kuchen gebacken wurde, kam es zum Einsatz. Die Kinder durften den Teig aus der Schüssel schlecken - ein Ritual! Das Gerät war robust und lief jahrelang ohne Murren. Viele haben ihr RG 28 noch heute auf dem Dachboden - ein treuer Küchenhelfer aus vergangenen Zeiten!"},
+        
+        {level: 45, q: "Welcher Fruchtsaft in der Dose war bei Kindern besonders beliebt?", hints: ["Es gab ihn in verschiedenen Sorten", "Die Marke hieß so ähnlich wie ein Himmelskörper", "Pfirsich und Aprikose waren die Klassiker"], options: ["Nudossi-Saft", "Wernesgrüner Saft", "Diamant-Saft", "none"], correct: 2, explanation: "Diamant-Saft! In den kleinen Dosen mit dem charakteristischen Design gab's die leckersten Fruchtsäfte. Pfirsich, Aprikose, Kirsche - jede Sorte ein Genuss! An heißen Sommertagen schmeckte der kalte Saft aus der Dose wie pures Glück. Bei Kindergeburtstagen standen die Dosen aufgereiht auf dem Tisch. Man musste sie mit dem Dosenöffner aufmachen - da brauchte man manchmal Hilfe von den Erwachsenen! Der süße, sirupartige Geschmack war unvergleichlich. Heute gibt's Diamant-Saft wieder zu kaufen - und der Geschmack ist immer noch derselbe! Ein Schluck ist wie eine Zeitreise in die Kindheit. Süße Erinnerungen in flüssiger Form!"},
+        
+        {level: 55, q: "Wo verbrachten viele DDR-Bürger ihren Sommerurlaub am Meer?", hints: ["Es liegt an der Ostsee", "Bekannte Orte waren Binz und Sellin", "Die Insel war ein beliebtes Urlaubsziel"], options: ["Usedom", "Rügen", "Fehmarn", "Hiddensee"], correct: 1, explanation: "Rügen! Die größte deutsche Insel war DAS Urlaubsparadies der DDR. Binz mit seinen weißen Villen, Sellin mit der berühmten Seebrücke, die Kreidefelsen von Sassnitz - jeder Ort hatte seinen Charme! Wer einen Platz im FDGB-Ferienheim ergatterte, war der König! Im Strandkorb sitzen, Würstchen im Brötchen essen, barfuß am Strand laufen - das war Urlaubsglück! Die Ostsee war 'unser' Meer, der einzige Ort, wo man wirklich frei fühlte. Kinder buddelten Sandburgen, sammelten Muscheln und Bernstein. Abends ging's in die Kurkonzerte. Rügen war Sehnsuchtsziel und Erholungsort zugleich. Bis heute ist die Insel beliebt - die Schönheit ist geblieben!"},
+        
+        {level: 65, q: "Welche Kosmetikcreme im weißen Tiegel stand in fast jedem Badezimmer?", hints: ["Sie kam aus Waldheim in Sachsen", "Der Name erinnert an Blumen", "Der Duft war charakteristisch und unverwechselbar"], options: ["Nivea", "Florena", "Elida", "Balea"], correct: 1, explanation: "Florena! Die Hautcreme im weißen Tiegel mit dem grünen Deckel war in jedem DDR-Haushalt zu finden. Der Duft - blumig, etwas süßlich - war unverwechselbar und weckt bis heute Erinnerungen! Hergestellt in Waldheim, Sachsen, war Florena bezahlbar und pflegte die Haut gut. Im Winter gegen raue Hände, im Sommer nach dem Sonnenbad - Florena half immer! Viele schwören noch heute darauf und kaufen die Creme bewusst. Es gab auch Florena-Shampoo, Rasiercreme und andere Produkte, aber die Hautcreme war der Klassiker. Nach der Wende blieb Florena erfolgreich - ein echter Dauerbrenner! Ein Stück DDR-Qualität, das überdauert hat. Wer heute den Tiegel öffnet, riecht sofort: Das ist Kindheit!"},
+        
+        {level: 75, q: "Welches Waschmittel mit blauen Körnern war Standard in jeder Waschküche?", hints: ["Der Werbespruch lautete: 'wäscht blütenweiß'", "Die Packung war charakteristisch blau", "Es gibt die Marke heute noch"], options: ["Persil", "Spee", "Omo", "Fewa"], correct: 1, explanation: "Spee! Das blaue Waschmittel in der charakteristischen Packung war DAS Waschmittel der DDR. 'Spee wäscht blütenweiß' - dieser Slogan saß! Die blauen Körner rochen intensiv - dieser Duft hing in jeder Waschküche. Am Waschtag wurde Spee großzügig in die Waschmaschine gegeben. Die Wäsche kam strahlend sauber heraus und duftete tagelang nach Frische! Spee gab's für Kochwäsche und Buntwäsche - für jeden Zweck das Richtige. Nach der Wende verschwand es zunächst, kam aber bald zurück und ist heute bundesweit erhältlich. Viele kaufen es aus Nostalgie - und weil es einfach gut wäscht! Der Geruch von Spee ist wie eine Zeitmaschine zurück in die Kindheit, wenn Mama Wäsche gewaschen hat."},
+        
+        {level: 85, q: "Welcher Kühlschrank aus dem Erzgebirge brummte zuverlässig in DDR-Küchen?", hints: ["Die Abkürzung stand für 'Deutsche Kühl- und Kraftmaschinen'", "Der Ortsname war Scharfenstein", "Das Gefrierfach war klein, aber wertvoll"], options: ["Foron", "dkk Scharfenstein", "Privileg", "Bauknecht"], correct: 1, explanation: "Der dkk Scharfenstein! Diese Kühlschränke aus dem VEB dkk Scharfenstein im Erzgebirge waren solide wie ein Fels. Sie brummten zwar etwas laut - aber sie kühlten zuverlässig! Das kleine Gefrierfach oben war Gold wert - da lagerten die Vorräte für besondere Anlässe. Der Kühlschrank lief und lief - manche Geräte halten bis heute, über 40 Jahre später! Ein dkk im Haushalt bedeutete Luxus und Fortschritt. Nicht jeder hatte einen - viele nutzten noch Speisekammern oder Keller. Wenn man endlich einen bekam nach Jahren Wartezeit, war die Freude riesig! Die Geräte waren einfach zu reparieren - oft reichte ein Handgriff. Ein Stück DDR-Ingenieurskunst, das Generationen treue Dienste leistete!"},
+        
+        {level: 95, q: "Wie hieß das elektrische Kleinbügeleisen, das besonders handlich war?", hints: ["Der Markenname begann mit 'Elektra'", "Es war deutlich kleiner als normale Bügeleisen", "Ideal für kleine Flächen und unterwegs"], options: ["Elektra Kleinbügeleisen", "RFT Bügler", "AKA Mini", "Privileg Klein"], correct: 0, explanation: "Das Elektra Kleinbügeleisen! Dieses handliche kleine Bügeleisen war der perfekte Helfer für schnelle Bügelarbeiten. Kragen bügeln, kleine Stoffstücke glätten - dafür war das Elektra ideal! Es passte in jede Schublade und war schnell zur Hand. Besonders Näherinnen liebten es, um Nähte glatt zu bügeln. Auf Reisen nahm man es mit - es war leicht und kompakt. Das Elektra wurde heiß wie ein großes Eisen, nur eben kleiner und wendiger. Viele Haushalte hatten beides: das große schwere Dampfbügeleisen für die Wochenwäsche und das Elektra für zwischendurch. Typisch DDR: praktisch, funktional, langlebig! Diese kleinen Helfer machten das Leben einfacher - und das zu einem bezahlbaren Preis. Ein unterschätztes Alltagsgerät, das seinen Dienst tat!"},
+        
+        {level: 65, q: "Welches Speiseeis am Stiel mit Schokoüberzug war der Renner im Sommer?", hints: ["Der Name war kurz und knackig", "Es kostete nur wenige Pfennige", "Vanilleeis mit Schokolade überzogen"], options: ["Langnese Magnum", "Kühli", "Viennetta", "Nogger"], correct: 1, explanation: "Das Kühli! Dieses Eis am Stiel war der absolute Sommerklassiker. An heißen Tagen bildeten sich Schlangen am Kiosk - jeder wollte ein Kühli! Das Vanilleeis innen, außen die knackige Schokoladenhülle - ein Genuss! Es kostete nur 50 Pfennig und war damit für jeden erschwinglich. Kinder sammelten ihre Pfennige, um sich ein Kühli zu kaufen. Der erste Biss, wenn die Schokolade knackte - herrlich! An der Ostsee, im Freibad, beim Spaziergang - überall gab's Kühlis. Die Verpackung landete manchmal achtlos auf dem Boden - das gehörte dazu. Nach der Wende verschwand das Kühli, aber die Erinnerung blieb. Heute gibt's ähnliche Produkte, aber das Original-Kühli - das war einmalig!"},
+        
+        {level: 75, q: "Welche Zigarettenmarke in brauner Schachtel rauchte fast jeder?", hints: ["Die Bezeichnung war eine Kombination aus Buchstabe und Zahl", "Die 'Sechser' waren sehr beliebt", "Es gab sie an jedem Kiosk"], options: ["Cabinet", "f6", "Juwel", "Club"], correct: 1, explanation: "Die f6! Die 'filter sechs' in der braunen Schachtel waren DIE Zigaretten der DDR. Fast jeder Raucher griff zur f6 - sie war erschwinglich und überall verfügbar. Die braunen Schachteln lagen auf jedem Küchentisch, steckten in jeder Jackentasche. Der Geschmack war kräftig, der Filter fest. Es gab auch andere Marken - Cabinet, Juwel, Club - aber die f6 war der Klassiker. Rauchen gehörte zum Alltag: in der Pause, nach dem Essen, beim Bier. Nichtraucher waren selten. Die f6 war auch ein soziales Ritual - man bot sich gegenseitig Zigaretten an, tauschte Feuer. Nach der Wende kamen West-Zigaretten - und die f6 verschwand. Aber viele erinnern sich noch an den Geschmack und das Gefühl, eine f6 anzuzünden."},
+        
+        {level: 85, q: "Welche Schreibmaschine klapperte in Büros und zu Hause?", hints: ["Der Name war ein Frauenname", "Sie kam aus dem Saalfelder Werk", "Das mechanische Klappern war charakteristisch"], options: ["Olympia", "Erika", "Triumph", "Privileg"], correct: 1, explanation: "Die Erika! Diese mechanischen Schreibmaschinen aus dem VEB Typewriter Saalfeld waren Präzisionsarbeit. Das rhythmische Klappern der Tasten, das Ding der Glocke am Zeilenende, der Geruch des Farbbands - Musik in den Ohren! Jeder Anschlag musste fest sein, sonst war der Buchstabe zu blass. Tippfehler radieren war mühsam - oft musste man das ganze Blatt neu schreiben. Wer schnell und sauber auf einer Erika tippen konnte, hatte eine Kunst gemeistert! In Büros standen Reihen von Erikas, alle klapperten gleichzeitig - ein orchestraler Sound. Auch zu Hause hatte man oft eine Erika - für Briefe, Bewerbungen, Hausarbeiten. Die Maschinen waren schwer, aber unverwüstlich. Heute sind sie gesuchte Sammlerstücke - ein Stück Schreibkultur!"}
+    ];
+
+    let currentLevel = 75;
+    let currentQuestionIndex = 0;
+    let answered = false;
+    let currentSlot = null;
+
+    function startNew() {
+        currentLevel = 75;
+        currentQuestionIndex = 0;
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        answered = false;
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('level-controls').style.display = 'none';
+        
+        const availableQuestions = questions.filter(q => q.level === currentLevel);
+        if (availableQuestions.length === 0) {
+            alert('Keine Fragen für dieses Level verfügbar!');
+            return;
+        }
+        
+        const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+        
+        document.getElementById('current-level').textContent = currentLevel;
+        document.getElementById('current-question').textContent = currentQuestionIndex + 1;
+        document.getElementById('question-text').textContent = question.q;
+        document.getElementById('hint-1').textContent = question.hints[0];
+        document.getElementById('hint-2').textContent = question.hints[1];
+        document.getElementById('hint-3').textContent = question.hints[2];
+        
+        const optionsContainer = document.getElementById('options');
+        optionsContainer.innerHTML = '';
+        question.options.forEach((option, index) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.textContent = option;
+            div.onclick = () => selectOption(index, question);
+            optionsContainer.appendChild(div);
+        });
+        
+        document.getElementById('explanation-box').innerHTML = '';
+        document.getElementById('explanation-box').classList.add('hidden');
+        
+        updateLevelButtons();
+    }
+
+    function selectOption(selected, question) {
+        if (answered) return;
+        answered = true;
+        
+        const options = document.querySelectorAll('.option');
+        options.forEach((opt, idx) => {
+            if (idx === question.correct) opt.classList.add('correct');
+            if (idx === selected && idx !== question.correct) opt.classList.add('wrong');
+            opt.style.cursor = 'default';
+            opt.onclick = null;
+        });
+        
+        const explanationBox = document.getElementById('explanation-box');
+        explanationBox.innerHTML = `
+            <div class="explanation-title">✓ ${question.options[question.correct]}</div>
+            <p>${question.explanation}</p>
+        `;
+        explanationBox.classList.remove('hidden');
+        
+        document.getElementById('level-controls').style.display = 'flex';
+    }
+
+    function adjustLevel(change) {
+        if (change !== 0) {
+            currentLevel += change;
+            currentLevel = Math.max(45, Math.min(95, currentLevel));
+        }
+        
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 20) {
+            loadQuestion();
+        } else {
+            alert('Quiz beendet! Alle 20 Fragen wurden beantwortet.');
+            location.reload();
+        }
+    }
+
+    function updateLevelButtons() {
+        document.getElementById('level-down').style.display = currentLevel <= 45 ? 'none' : 'block';
+        document.getElementById('level-up').style.display = currentLevel >= 95 ? 'none' : 'block';
+    }
+
+    function showPauseModal() {
+        document.getElementById('pause-level').textContent = currentLevel;
+        document.getElementById('pause-question').textContent = currentQuestionIndex + 1;
+        document.getElementById('pause-modal').classList.remove('hidden');
+    }
+
+    function closePauseModal() {
+        document.getElementById('pause-modal').classList.add('hidden');
+    }
+
+    function savePause(slot) {
+        const note = document.getElementById('note-text').value;
+        const saveData = {
+            level: currentLevel,
+            question: currentQuestionIndex,
+            note: note,
+            timestamp: new Date().toLocaleString('de-DE')
+        };
+        
+        localStorage.setItem(`ddr-quiz-slot-${slot}`, JSON.stringify(saveData));
+        alert(`Pause ${slot === 1 ? 'EINS (Opa)' : 'ZWEI (Omi)'} gespeichert!`);
+        closePauseModal();
+    }
+
+    function resumeSlot(slot) {
+        const saveData = localStorage.getItem(`ddr-quiz-slot-${slot}`);
+        if (!saveData) {
+            alert('Keine gespeicherte Pause vorhanden!');
+            return;
+        }
+        
+        const data = JSON.parse(saveData);
+        currentLevel = data.level;
+        currentQuestionIndex = data.question;
+        currentSlot = slot;
+        
+        if (data.note) {
+            alert(`Notiz: ${data.note}\n\nLevel: ${data.level}, Frage: ${data.question + 1}`);
+        }
+        
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    window.onload = function() {
+        const slot1 = localStorage.getItem('ddr-quiz-slot-1');
+        const slot2 = localStorage.getItem('ddr-quiz-slot-2');
+        
+        if (slot1) {
+            document.getElementById('resume-opa').disabled = false;
+            const data1 = JSON.parse(slot1);
+            document.getElementById('resume-opa').textContent = `📖 Fortsetzen bei Pause EINS (Opa) - Frage ${data1.question + 1}, Level ${data1.level}`;
+        } else {
+            document.getElementById('resume-opa').disabled = true;
+        }
+        
+        if (slot2) {
+            document.getElementById('resume-omi').disabled = false;
+            const data2 = JSON.parse(slot2);
+            document.getElementById('resume-omi').textContent = `📖 Fortsetzen bei Pause ZWEI (Omi) - Frage ${data2.question + 1}, Level ${data2.level}`;
+        } else {
+            document.getElementById('resume-omi').disabled = true;
+        }
+    };
+</script>
+```
+
+</body>
+</html>
