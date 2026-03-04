@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interaktives Abenteuer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+    #stats {
+      display: flex;
+      justify-content: space-between;
+      background-color: #1e1e1e;
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    #story-text {
+      background-color: #1e1e1e;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      min-height: 100px;
+    }
+    .choice-button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: #2d2d2d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .choice-button:hover {
+      background-color: #3a3a3a;
+    }
+    #abbruch-button {
+      background-color: #f44336;
+      margin-top: 10px;
+    }
+    #abbruch-button:hover {
+      background-color: #d32f2f;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+    .modal-button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #2d2d2d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #save-name {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #2d2d2d;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+    #saved-games {
+      list-style: none;
+      padding: 0;
+    }
+    #saved-games li {
+      margin: 10px 0;
+    }
+    #saved-games button {
+      width: 100%;
+      padding: 10px;
+      background-color: #2d2d2d;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    h1, h2 {
+      color: #BB86FC;
+    }
+    .parameter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .parameter-option {
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .parameter-option:hover {
+      background-color: #2d2d2d;
+    }
+    .parameter-option.selected {
+      background-color: #BB86FC;
+      color: white;
+    }
+    @media (max-width: 600px) {
+      .parameter-grid {
+        grid-template-columns: 1fr;
+      }
+      .choice-button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Parameter-Auswahl -->
+  <div id="parameter-screen" class="screen active">
+    <h1>Dein Abenteuer beginnt!</h1>
+    <p>Wähle deine Eigenschaften:</p>
+    <div class="parameter-section">
+      <h3>Alter</h3>
+      <div class="parameter-grid" id="alter-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Beruf</h3>
+      <div class="parameter-grid" id="beruf-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Genre</h3>
+      <div class="parameter-grid" id="genre-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Moralischer Fokus</h3>
+      <div class="parameter-grid" id="fokus-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Sprachstil</h3>
+      <div class="parameter-grid" id="stil-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Konsequenz-Level</h3>
+      <div class="parameter-grid" id="konsequenz-options"></div>
+    </div>
+    <div class="parameter-section">
+      <h3>Kernziel</h3>
+      <div class="parameter-grid" id="ziel-options"></div>
+    </div>
+    <button id="start-game" class="choice-button">Spiel starten</button>
+  </div>
+
+  <!-- Spielscreen -->
+  <div id="game-screen" class="screen">
+    <div id="stats">
+      <div class="stat">Mut: <span id="stat-mut" class="stat-value">0</span></div>
+      <div class="stat">Logik: <span id="stat-logik" class="stat-value">0</span></div>
+      <div class="stat">Empathie: <span id="stat-empathie" class="stat-value">0</span></div>
+      <div class="stat">Gerechtigkeit: <span id="stat-gerechtigkeit" class="stat-value">0</span></div>
+    </div>
+    <div id="story-text"></div>
+    <div id="choices"></div>
+    <button id="abbruch-button" class="choice-button">Abbruch</button>
+  </div>
+
+  <!-- Abbruch-Menü -->
+  <div id="abbruch-menu" class="modal">
+    <div class="modal-content">
+      <h2>Spiel unterbrechen</h2>
+      <button id="weiterspielen" class="modal-button">Weiterspielen</button>
+      <button id="speichern-beenden" class="modal-button">Speichern & Beenden</button>
+    </div>
+  </div>
+
+  <!-- Speichern-Menü -->
+  <div id="save-menu" class="modal">
+    <div class="modal-content">
+      <h2>Spiel speichern</h2>
+      <input type="text" id="save-name" placeholder="Name (z. B. Uwe)">
+      <div id="save-slots">
+        <button onclick="saveGame(1)" class="modal-button">Slot 1</button>
+        <button onclick="saveGame(2)" class="modal-button">Slot 2</button>
+        <button onclick="saveGame(3)" class="modal-button">Slot 3</button>
+        <button onclick="saveGame(4)" class="modal-button">Slot 4</button>
+        <button onclick="saveGame(5)" class="modal-button">Slot 5</button>
+      </div>
+      <button id="cancel-save" class="modal-button">Abbrechen</button>
+    </div>
+  </div>
+
+  <!-- Lade-Menü -->
+  <div id="load-screen" class="screen">
+    <h1>Spielstand laden</h1>
+    <ul id="saved-games"></ul>
+    <button id="new-game" class="choice-button">Neues Spiel</button>
+  </div>
+
+  <!-- JSON-Daten (eingebettet + ERWEITERT) -->
+  <script type="application/json" id="parameters">
+    {
+      "alter": [
+        {"value": "kind", "label": "Kind (10–12)", "desc": "Einfache Sprache, magische Abenteuer."},
+        {"value": "teen", "label": "Teenager (13–18)", "desc": "Komplexere Rätsel und moralische Dilemmata."},
+        {"value": "erwachsener", "label": "Erwachsener", "desc": "Tiefgründige Dialoge und strategische Entscheidungen."},
+        {"value": "senior", "label": "Senior (60+)", "desc": "Weisheit und Erfahrung spielen eine zentrale Rolle."}
+      ],
+      "beruf": [
+        {"value": "detektiv", "label": "Detektiv", "desc": "Findet Hinweise und löst Rätsel."},
+        {"value": "kuenstler", "label": "Künstler", "desc": "Sieht Schönheit und Details, die andere übersehen."},
+        {"value": "forscher", "label": "Forscher", "desc": "Analysiert Phänomene und entdeckt Geheimnisse."},
+        {"value": "handwerker", "label": "Handwerker", "desc": "Repariert, baut und nutzt Werkzeuge."}
+      ],
+      "genre": [
+        {"value": "high_fantasy", "label": "High Fantasy", "desc": "Magie, Drachen und epische Quests."},
+        {"value": "cyberpunk", "label": "Cyberpunk", "desc": "Neonlichter, Hacker und eine dystopische Zukunft."},
+        {"value": "noir", "label": "Noir Krimi", "desc": "Dunkle Gassen, Geheimnisse und moralische Grauzonen."},
+        {"value": "real_life", "label": "Real-Life Mystery", "desc": "Alltagsrätsel mit überraschenden Wendungen."}
+      ],
+      "fokus": [
+        {"value": "empathie", "label": "Empathie", "desc": "Mitgefühl steht im Mittelpunkt."},
+        {"value": "logik", "label": "Logik", "desc": "Analytisches Denken ist entscheidend."},
+        {"value": "mut", "label": "Mut", "desc": "Tapferkeit wird belohnt."},
+        {"value": "gerechtigkeit", "label": "Gerechtigkeit", "desc": "Moralische Entscheidungen haben Konsequenzen."}
+      ],
+      "stil": [
+        {"value": "poetisch", "label": "Poetisch", "desc": "Blumige, bildhafte Sprache."},
+        {"value": "sachlich", "label": "Sachlich", "desc": "Klare, präzise Formulierungen."},
+        {"value": "episch", "label": "Episch", "desc": "Dramatische, heroische Erzählweise."},
+        {"value": "ironisch", "label": "Ironisch", "desc": "Sarkasmus und humorvolle Untertöne."}
+      ],
+      "konsequenz": [
+        {"value": "sanft", "label": "Sanft", "desc": "Entscheidungen haben emotionale Folgen."},
+        {"value": "realistisch", "label": "Realistisch", "desc": "Ursache-Wirkung wie im echten Leben."},
+        {"value": "hart", "label": "Hart", "desc": "Fehler können schwerwiegende Konsequenzen haben."},
+        {"value": "unvorhersehbar", "label": "Unvorhersehbar", "desc": "Zufall spielt eine große Rolle."}
+      ],
+      "ziel": [
+        {"value": "wissen", "label": "Wissen lernen", "desc": "Fakten und Fähigkeiten vermitteln."},
+        {"value": "ethik", "label": "Ethische Debatte", "desc": "Moralische Fragen im Fokus."},
+        {"value": "entspannung", "label": "Entspannung", "desc": "Meditative, ruhige Erfahrung."},
+        {"value": "nervenkitzel", "label": "Nervenkitzel", "desc": "Spannung und Adrenalin."}
+      ]
+    }
+  </script>
+
+  <script type="application/json" id="scenes">
+    {
+      "scenes": {
+        "start": {
+          "text": "Willkommen in deinem Abenteuer! Du bist ein {ALTER_LABEL} {BERUF_LABEL} in einer {GENRE_LABEL}-Welt. Dein Fokus liegt auf {FOKUS_LABEL}, und dein Ziel ist es, {ZIEL_LABEL}.",
+          "choices": [
+            {"text": "Abenteuer beginnen!", "nextScene": "1"}
+          ]
+        },
+        "1": {
+          "text": "Du stehst vor einer alten Tür. {BERUF_DESC} Was tust du?",
+          "choices": [
+            {
+              "text": "Tür öffnen",
+              "nextScene": "2",
+              "condition": {"stat": "mut", "value": 3}
+            },
+            {
+              "text": "Erst nachdenken",
+              "nextScene": "3",
+              "condition": {"stat": "logik", "value": 2}
+            },
+            {
+              "text": "Um Hilfe rufen",
+              "nextScene": "4",
+              "condition": {"stat": "empathie", "value": 1}
+            }
+          ],
+          "onEnter": {
+            "setSceneVars": {"tuer_geoeffnet": false}
+          }
+        },
+        "2": {
+          "text": "Hinter der Tür findest du einen {GENRE_SPECIFIC_OBJECT}! Dein {FOKUS_LABEL} hilft dir, die Situation zu meistern.",
+          "choices": [
+            {"text": "Objekt untersuchen", "nextScene": "5"},
+            {"text": "Weitergehen", "nextScene": "6"}
+          ],
+          "onEnter": {
+            "updateStats": {"mut": 5, "logik": 2}
+          }
+        },
+        "3": {
+          "text": "Du überlegst sorgfältig. Vielleicht war das die klügere Wahl...",
+          "choices": [
+            {"text": "Zurück zur Tür", "nextScene": "1"},
+            {"text": "Etwas anderes probieren", "nextScene": "6"}
+          ],
+          "onEnter": {
+            "updateStats": {"logik": 5}
+          }
+        },
+        "4": {
+          "text": "Ein Freund kommt dir zur Hilfe! Gemeinsam findet ihr eine Lösung.",
+          "choices": [
+            {"text": "Danke sagen und weitermachen", "nextScene": "5"}
+          ],
+          "onEnter": {
+            "updateStats": {"empathie": 5}
+          }
+        },
+        "5": {
+          "text": "Das Objekt entpuppt sich als {GENRE_SPECIFIC_DETAIL}! Was nun?",
+          "choices": [
+            {"text": "Mitnehmen", "nextScene": "7"},
+            {"text": "Zurücklassen", "nextScene": "8"}
+          ]
+        },
+        "6": {
+          "text": "Du gehst weiter und entdeckst einen neuen Pfad...",
+          "choices": [
+            {"text": "Pfad folgen", "nextScene": "9"}
+          ]
+        },
+        "7": {
+          "text": "Ende (Gut): Du hast das Objekt genutzt, um {ZIEL_LABEL} zu erreichen!",
+          "choices": []
+        },
+        "8": {
+          "text": "Ende (Neutral): Das Objekt war nicht nötig. Dein Abenteuer geht weiter...",
+          "choices": []
+        },
+        "9": {
+          "text": "Ende (Offen): Der Pfad führt in die Weite. Was wird als Nächstes passieren?",
+          "choices": []
+        },
+        "10": {
+          "text": "Du betrittst einen {GENRE_SPECIFIC_PLACE}. {BERUF_DESC} Plötzlich hörst du ein leises {GENRE_SPECIFIC_SOUND}. Was tust du?",
+          "choices": [
+            {
+              "text": "Geräusch untersuchen",
+              "nextScene": "11",
+              "condition": {"stat": "mut", "value": 2}
+            },
+            {
+              "text": "Ignorieren und weitergehen",
+              "nextScene": "12",
+              "condition": null
+            },
+            {
+              "text": "Laut rufen: 'Hallo?'",
+              "nextScene": "13",
+              "condition": {"stat": "empathie", "value": 3}
+            }
+          ],
+          "onEnter": {
+            "setSceneVars": {"geräusch_untersucht": false}
+          }
+        },
+        "11": {
+          "text": "Hinter einem {GENRE_SPECIFIC_OBJECT} findest du eine {GENRE_SPECIFIC_ENTITY}, die {FOKUS_SPECIFIC_REACTION} reagiert. Dein {FOKUS_LABEL} hilft dir, die Situation zu verstehen.",
+          "choices": [
+            {
+              "text": "Mit der Entity sprechen",
+              "nextScene": "14",
+              "condition": {"stat": "empathie", "value": 4}
+            },
+            {
+              "text": "Vorsichtig zurückweichen",
+              "nextScene": "15",
+              "condition": null
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"mut": 5, "logik": 3}
+          }
+        },
+        "12": {
+          "text": "Du ignorierst das Geräusch und gehst weiter. Plötzlich {GENRE_SPECIFIC_EVENT}.",
+          "choices": [
+            {
+              "text": "Reagieren",
+              "nextScene": "16"
+            },
+            {
+              "text": "Weiter ignorieren",
+              "nextScene": "17"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"logik": -2}
+          }
+        },
+        "13": {
+          "text": "Eine Stimme antwortet: '{GENRE_SPECIFIC_REPLY}'. {BERUF_DESC} Was antwortest du?",
+          "choices": [
+            {
+              "text": "Freundlich antworten",
+              "nextScene": "18",
+              "condition": {"stat": "empathie", "value": 2}
+            },
+            {
+              "text": "Misstrauisch sein",
+              "nextScene": "19",
+              "condition": {"stat": "logik", "value": 3}
+            }
+          ]
+        },
+        "14": {
+          "text": "Die {GENRE_SPECIFIC_ENTITY} erzählt dir von einem {ZIEL_SPECIFIC_OBJECT}. Dein {FOKUS_LABEL} führt dich zur nächsten Entscheidung:",
+          "choices": [
+            {
+              "text": "Helfen",
+              "nextScene": "20",
+              "condition": {"stat": "empathie", "value": 5}
+            },
+            {
+              "text": "Eigene Ziele verfolgen",
+              "nextScene": "21",
+              "condition": null
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"empathie": 10}
+          }
+        },
+        "15": {
+          "text": "Du weichst zurück und beobachtest aus der Ferne. {GENRE_SPECIFIC_OBSERVATION}.",
+          "choices": [
+            {
+              "text": "Näher herangehen",
+              "nextScene": "11"
+            },
+            {
+              "text": "Gehen",
+              "nextScene": "17"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"logik": 5}
+          }
+        },
+        "16": {
+          "text": "Deine schnelle Reaktion rettet dich! Du findest einen {GENRE_SPECIFIC_REWARD}.",
+          "choices": [
+            {
+              "text": "Rewards behalten",
+              "nextScene": "22"
+            },
+            {
+              "text": "Weitergeben",
+              "nextScene": "23",
+              "condition": {"stat": "gerechtigkeit", "value": 4}
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"mut": 10},
+            "addInventory": "{GENRE_SPECIFIC_REWARD}"
+          }
+        },
+        "17": {
+          "text": "Deine Gleichgültigkeit führt zu {GENRE_SPECIFIC_CONSEQUENCE}.",
+          "choices": [
+            {
+              "text": "Akzeptieren",
+              "nextScene": "24"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"logik": -5, "gerechtigkeit": -3}
+          }
+        },
+        "18": {
+          "text": "Die Stimme wird freundlicher: '{GENRE_SPECIFIC_FRIENDLY_REPLY}'. Ihr beschließt, {ZIEL_SPECIFIC_ACTION} zu tun.",
+          "choices": [
+            {
+              "text": "Zusammenarbeiten",
+              "nextScene": "25"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"empathie": 10, "gerechtigkeit": 5}
+          }
+        },
+        "19": {
+          "text": "Die Stimme wirkt verärgert: '{GENRE_SPECIFIC_ANGRY_REPLY}'. Die Situation eskaliert...",
+          "choices": [
+            {
+              "text": "Deeskalieren",
+              "nextScene": "18",
+              "condition": {"stat": "empathie", "value": 5}
+            },
+            {
+              "text": "Konfrontation",
+              "nextScene": "26",
+              "condition": {"stat": "mut", "value": 7}
+            }
+          ]
+        },
+        "20": {
+          "text": "Deine Hilfe wird belohnt! {GENRE_SPECIFIC_REWARD_EXTENDED}. Dein {ZIEL_LABEL} rückt näher.",
+          "choices": [
+            {
+              "text": "Weiter zum Ziel",
+              "nextScene": "27"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"empathie": 15, "gerechtigkeit": 10},
+            "addInventory": "{GENRE_SPECIFIC_REWARD_EXTENDED}"
+          }
+        },
+        "21": {
+          "text": "Du lässt die {GENRE_SPECIFIC_ENTITY} zurück. Später hörst du, dass {GENRE_SPECIFIC_MISSING_OUT}.",
+          "choices": [
+            {
+              "text": "Bereuen",
+              "nextScene": "14"
+            },
+            {
+              "text": "Akzeptieren",
+              "nextScene": "24"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"gerechtigkeit": -10}
+          }
+        },
+        "22": {
+          "text": "Der {GENRE_SPECIFIC_REWARD} erweist sich als nützlich! Du kannst jetzt {GENRE_SPECIFIC_ABILITY}.",
+          "choices": [
+            {
+              "text": "Fähigkeit nutzen",
+              "nextScene": "27"
+            }
+          ],
+          "onEnter": {
+            "setSceneVars": {"has_reward_ability": true}
+          }
+        },
+        "23": {
+          "text": "Deine Großzügigkeit wird belohnt: {GENRE_SPECIFIC_KARMA_REWARD}.",
+          "choices": [
+            {
+              "text": "Weitergehen",
+              "nextScene": "27"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"gerechtigkeit": 15, "empathie": 10}
+          }
+        },
+        "24": {
+          "text": "Dein Weg führt dich in eine {GENRE_SPECIFIC_NEW_LOCATION}.",
+          "choices": [
+            {
+              "text": "Erkunden",
+              "nextScene": "10"
+            },
+            {
+              "text": "Zurückkehren",
+              "nextScene": "start"
+            }
+          ]
+        },
+        "25": {
+          "text": "Gemeinsam erreicht ihr {ZIEL_SPECIFIC_SUCCESS}. Dein {FOKUS_LABEL} hat sich ausgezahlt!",
+          "choices": [
+            {
+              "text": "Feiern!",
+              "nextScene": "28"
+            }
+          ]
+        },
+        "26": {
+          "text": "Die Konfrontation endet {GENRE_SPECIFIC_CONFRONTATION_END}. Dein {FOKUS_LABEL} wird auf die Probe gestellt.",
+          "choices": [
+            {
+              "text": "Lektion lernen",
+              "nextScene": "24"
+            }
+          ],
+          "onEnter": {
+            "updateStats": {"mut": -5, "gerechtigkeit": -5}
+          }
+        },
+        "27": {
+          "text": "Du stehst vor der finalen Herausforderung: {GENRE_SPECIFIC_FINAL_CHALLENGE}.",
+          "choices": [
+            {
+              "text": "Alles geben!",
+              "nextScene": "28",
+              "condition": {"stat": "mut", "value": 10}
+            },
+            {
+              "text": "Klug handeln",
+              "nextScene": "28",
+              "condition": {"stat": "logik", "value": 10}
+            }
+          ]
+        },
+        "28": {
+          "text": "Gratulation! Du hast {ZIEL_SPECIFIC_SUCCESS_EXTENDED}. Dein Abenteuer endet hier – aber die Welt bleibt voller Möglichkeiten.",
+          "choices": []
+        }
+      },
+      "sceneVars": {
+        "GENRE_SPECIFIC_PLACE": {
+          "high_fantasy": "verzauberten Wald",
+          "cyberpunk": "verlassenen Serverraum",
+          "noir": "dunklen Hinterhof",
+          "real_life": "alten Dachboden"
+        },
+        "GENRE_SPECIFIC_SOUND": {
+          "high_fantasy": "Flüstern der Bäume",
+          "cyberpunk": "elektrisches Summen",
+          "noir": "Schritte auf nassem Pflaster",
+          "real_life": "Knarren der Dielen"
+        },
+        "GENRE_SPECIFIC_OBJECT": {
+          "high_fantasy": "moosbewachsenen Stein",
+          "cyberpunk": "defekten Androiden",
+          "noir": "zerknitterten Mantel",
+          "real_life": "staubigen Karton"
+        },
+        "GENRE_SPECIFIC_ENTITY": {
+          "high_fantasy": "ein Waldgeist",
+          "cyberpunk": "eine KI-Stimme",
+          "noir": "eine geheimnisvolle Gestalt",
+          "real_life": "ein Nachbar"
+        },
+        "FOKUS_SPECIFIC_REACTION": {
+          "empathie": "freundlich",
+          "logik": "neugierig",
+          "mut": "ängstlich",
+          "gerechtigkeit": "misstrauisch"
+        },
+        "GENRE_SPECIFIC_EVENT": {
+          "high_fantasy": "beginnt der Boden zu leuchten",
+          "cyberpunk": "erlischt das Licht",
+          "noir": "ertönt ein Schuss",
+          "real_life": "fällt ein Regal um"
+        },
+        "GENRE_SPECIFIC_REPLY": {
+          "high_fantasy": "'Wer stört meine Ruhe?'",
+          "cyberpunk": "'Identifiziere dich.'",
+          "noir": "'Wer ist da?'",
+          "real_life": "'Hallo? Wer ist denn da?'"
+        },
+        "GENRE_SPECIFIC_FRIENDLY_REPLY": {
+          "high_fantasy": "'Danke für deine Hilfe, Reisender!'",
+          "cyberpunk": "'Endlich ein vernünftiger Mensch.'",
+          "noir": "'Ich wusste, ich kann dir vertrauen.'",
+          "real_life": "'Ach, du bist es! Komm rein!'"
+        },
+        "GENRE_SPECIFIC_REWARD": {
+          "high_fantasy": "ein Amulett der Weisheit",
+          "cyberpunk": "ein Datenkristall",
+          "noir": "ein belastender Brief",
+          "real_life": "ein Familienfoto"
+        },
+        "GENRE_SPECIFIC_REWARD_EXTENDED": {
+          "high_fantasy": "das Amulett der Weisheit +10",
+          "cyberpunk": "der Datenkristall mit Geheimdaten",
+          "noir": "der Brief mit entscheidenden Beweisen",
+          "real_life": "das Foto mit einer überraschenden Aufschrift"
+        },
+        "GENRE_SPECIFIC_CONSEQUENCE": {
+          "high_fantasy": "ein Fluch trifft dich",
+          "cyberpunk": "ein Virus infiziert dein System",
+          "noir": "du verlierst eine wichtige Spur",
+          "real_life": "du verpasst eine Chance"
+        },
+        "GENRE_SPECIFIC_ANGRY_REPLY": {
+          "high_fantasy": "'Wie kannst du es wagen!'",
+          "cyberpunk": "'Feindliche Handlung erkannt.'",
+          "noir": "'Das war ein Fehler.'",
+          "real_life": "'Lass mich in Ruhe!'"
+        },
+        "GENRE_SPECIFIC_NEW_LOCATION": {
+          "high_fantasy": "eine vergessene Lichtung",
+          "cyberpunk": "ein verstecktes Datenarchiv",
+          "noir": "eine verlassene Bar",
+          "real_life": "ein Flohmarkt"
+        },
+        "GENRE_SPECIFIC_FINAL_CHALLENGE": {
+          "high_fantasy": "der Wächter des Tempels",
+          "cyberpunk": "die Firewall des Hauptservers",
+          "noir": "der letzte Zeuge",
+          "real_life": "die Entscheidung deines Lebens"
+        },
+        "ZIEL_SPECIFIC_OBJECT": {
+          "wissen": "ein uraltes Buch",
+          "ethik": "ein moralisches Dilemma",
+          "entspannung": "ein Ort der Ruhe",
+          "nervenkitzel": "die Lösung des Rätsels"
+        },
+        "ZIEL_SPECIFIC_ACTION": {
+          "wissen": "das Buch übersetzen",
+          "ethik": "das Dilemma lösen",
+          "entspannung": "die Ruhe genießen",
+          "nervenkitzel": "das Rätsel knacken"
+        },
+        "ZIEL_SPECIFIC_SUCCESS": {
+          "wissen": "das Geheimnis der Welt",
+          "ethik": "die richtige Entscheidung",
+          "entspannung": "innere Frieden",
+          "nervenkitzel": "den ultimativen Thrill"
+        },
+        "ZIEL_SPECIFIC_SUCCESS_EXTENDED": {
+          "wissen": "das ultimative Wissen erlangt",
+          "ethik": "die Welt ein Stück besser gemacht",
+          "entspannung": "deine Seele geheilt",
+          "nervenkitzel": "den Adrenalinrausch überlebt"
+        },
+        "GENRE_SPECIFIC_CONFRONTATION_END": {
+          "high_fantasy": "mit einem magischen Duell",
+          "cyberpunk": "mit einem Systemcrash",
+          "noir": "mit einer Schießerei",
+          "real_life": "mit einem Streit"
+        },
+        "GENRE_SPECIFIC_ABILITY": {
+          "high_fantasy": "mit Tieren sprechen",
+          "cyberpunk": "Firewalls hacken",
+          "noir": "Lügen erkennen",
+          "real_life": "Möbel reparieren"
+        },
+        "GENRE_SPECIFIC_KARMA_REWARD": {
+          "high_fantasy": "ein Segen der Naturgeister folgt dir",
+          "cyberpunk": "ein anonymer Wohltäter hilft dir",
+          "noir": "ein Informant gibt dir einen Tipp",
+          "real_life": "ein Freund lädt dich zum Essen ein"
+        },
+        "GENRE_SPECIFIC_MISSING_OUT": {
+          "high_fantasy": "der Waldgeist dir einen Wunsch erfüllt hätte",
+          "cyberpunk": "der Datenkristall den Hauptserver entschlüsselt hätte",
+          "noir": "der Zeuge die Wahrheit gesagt hätte",
+          "real_life": "der Nachbar dir ein Familiengeheimnis verraten hätte"
+        },
+        "GENRE_SPECIFIC_OBSERVATION": {
+          "high_fantasy": "die Lichter tanzen im Takt deines Atems",
+          "cyberpunk": "die KI sich selbst repariert",
+          "noir": "die Gestalt im Schatten verschwindet",
+          "real_life": "der Karton nur Staub enthält"
+        },
+        "GENRE_SPECIFIC_OBJECT": {
+          "high_fantasy": "moosbewachsenen Stein",
+          "cyberpunk": "defekten Androiden",
+          "noir": "zerknitterten Mantel",
+          "real_life": "staubigen Karton"
+        },
+        "GENRE_SPECIFIC_DETAIL": {
+          "high_fantasy": "ein Schlüssel zur magischen Bibliothek",
+          "cyberpunk": "ein Prototyp für ein neuronales Interface",
+          "noir": "ein Geständnisbrief",
+          "real_life": "der Schlüssel zu deinem Nachbarhaus"
+        }
+      }
+    }
+  </script>
+
+  <script>
+    // Spielzustand
+    let gameState = {
+      selectedParameters: {},
+      currentScene: "start",
+      stats: {
+        mut: 0,
+        logik: 0,
+        empathie: 0,
+        gerechtigkeit: 0
+      },
+      sceneVars: {},
+      inventory: [],
+      history: []
+    };
+
+    // DOM-Elemente
+    const parameterScreen = document.getElementById('parameter-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const loadScreen = document.getElementById('load-screen');
+    const abbruchMenu = document.getElementById('abbruch-menu');
+    const saveMenu = document.getElementById('save-menu');
+    const storyText = document.getElementById('story-text');
+    const choicesContainer = document.getElementById('choices');
+    const savedGamesList = document.getElementById('saved-games');
+
+    // Parameter und Szenen laden
+    const parameters = JSON.parse(document.getElementById('parameters').textContent);
+    const scenesData = JSON.parse(document.getElementById('scenes').textContent);
+
+    // Parameter-Auswahl rendern
+    function renderParameterOptions(category, containerId) {
+      const container = document.getElementById(containerId);
+      parameters[category].forEach(option => {
+        const optionElement = document.createElement('div');
+        optionElement.className = 'parameter-option';
+        optionElement.textContent = `${option.label}: ${option.desc}`;
+        optionElement.onclick = () => selectParameter(category, option.value);
+        container.appendChild(optionElement);
+      });
+    }
+
+    // Parameter auswählen
+    function selectParameter(category, value) {
+      // Entferne vorherige Auswahl
+      document.querySelectorAll(`.parameter-option.selected`).forEach(el => {
+        el.classList.remove('selected');
+      });
+
+      // Markiere neue Auswahl
+      const options = document.querySelectorAll(`#${category}-options .parameter-option`);
+      const selectedIndex = parameters[category].findIndex(opt => opt.value === value);
+      options[selectedIndex].classList.add('selected');
+
+      // Speichere Auswahl
+      gameState.selectedParameters[category] = value;
+    }
+
+    // Spiel starten
+    document.getElementById('start-game').onclick = () => {
+      if (Object.keys(gameState.selectedParameters).length === 7) {
+        parameterScreen.classList.remove('active');
+        gameScreen.classList.add('active');
+        renderScene(gameState.currentScene);
+      } else {
+        alert('Bitte wähle alle Parameter aus!');
+      }
+    };
+
+    // Szene rendern
+    function renderScene(sceneId) {
+      gameState.currentScene = sceneId;
+      const scene = scenesData.scenes[sceneId];
+
+      // Stats aktualisieren
+      updateStatsUI();
+
+      // Szene vorbereiten
+      if (scene.onEnter) {
+        if (scene.onEnter.updateStats) {
+          Object.entries(scene.onEnter.updateStats).forEach(([stat, value]) => {
+            gameState.stats[stat] += value;
+          });
+        }
+        if (scene.onEnter.setSceneVars) {
+          gameState.sceneVars = { ...gameState.sceneVars, ...scene.onEnter.setSceneVars };
+        }
+        if (scene.onEnter.addInventory) {
+          gameState.inventory.push(scene.onEnter.addInventory);
+        }
+      }
+
+      // Text mit Platzhaltern ersetzen
+      let text = scene.text;
+      Object.entries(gameState.selectedParameters).forEach(([key, value]) => {
+        const param = parameters[key].find(p => p.value === value);
+        text = text.replace(new RegExp(`{${key.toUpperCase()}_LABEL}`, 'g'), param.label);
+        text = text.replace(new RegExp(`{${key.toUpperCase()}_DESC}`, 'g'), param.desc);
+      });
+
+      // Genre-spezifische Platzhalter
+      Object.entries(scenesData.sceneVars).forEach(([varName, varOptions]) => {
+        if (typeof varOptions === 'object') {
+          const selectedGenre = gameState.selectedParameters.genre;
+          const selectedZiel = gameState.selectedParameters.ziel;
+          const selectedFokus = gameState.selectedParameters.fokus;
+
+          if (varOptions[selectedGenre]) {
+            text = text.replace(new RegExp(`{${varName}}`, 'g'), varOptions[selectedGenre]);
+          }
+          if (varOptions[selectedZiel]) {
+            text = text.replace(new RegExp(`{${varName}}`, 'g'), varOptions[selectedZiel]);
+          }
+          if (varOptions[selectedFokus]) {
+            text = text.replace(new RegExp(`{${varName}}`, 'g'), varOptions[selectedFokus]);
+          }
+        }
+      });
+
+      storyText.textContent = text;
+      choicesContainer.innerHTML = '';
+
+      // Choices rendern
+      scene.choices.forEach(choice => {
+        if (!choice.condition || checkCondition(choice.condition)) {
+          const button = document.createElement('button');
+          button.className = 'choice-button';
+          button.textContent = choice.text;
+          button.onclick = () => {
+            if (choice.nextScene) {
+              renderScene(choice.nextScene);
+            }
+            if (choice.updateStats) {
+              Object.entries(choice.updateStats).forEach(([stat, value]) => {
+                gameState.stats[stat] += value;
+              });
+              updateStatsUI();
+            }
+          };
+          choicesContainer.appendChild(button);
+        }
+      });
+    }
+
+    // Bedingung prüfen
+    function checkCondition(condition) {
+      return gameState.stats[condition.stat] >= condition.value;
+    }
+
+    // Stats-UI aktualisieren
+    function updateStatsUI() {
+      document.getElementById('stat-mut').textContent = gameState.stats.mut;
+      document.getElementById('stat-logik').textContent = gameState.stats.logik;
+      document.getElementById('stat-empathie').textContent = gameState.stats.empathie;
+      document.getElementById('stat-gerechtigkeit').textContent = gameState.stats.gerechtigkeit;
+    }
+
+    // Abbruch-Button
+    document.getElementById('abbruch-button').onclick = () => {
+      abbruchMenu.classList.add('active');
+    };
+
+    // Abbruch-Menü
+    document.getElementById('weiterspielen').onclick = () => {
+      abbruchMenu.classList.remove('active');
+    };
+
+    document.getElementById('speichern-beenden').onclick = () => {
+      abbruchMenu.classList.remove('active');
+      saveMenu.classList.add('active');
+    };
+
+    document.getElementById('cancel-save').onclick = () => {
+      saveMenu.classList.remove('active');
+    };
+
+    // Spiel speichern
+    function saveGame(slot) {
+      const name = document.getElementById('save-name').value || `Spielstand ${slot}`;
+      const savedGames = JSON.parse(localStorage.getItem('savedGames')) || {};
+      savedGames[slot] = {
+        name: name,
+        gameState: JSON.parse(JSON.stringify(gameState)),
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('savedGames', JSON.stringify(savedGames));
+      saveMenu.classList.remove('active');
+      loadScreen.classList.add('active');
+      gameScreen.classList.remove('active');
+      renderSavedGames();
+    }
+
+    // Gespeicherte Spiele laden
+    function renderSavedGames() {
+      savedGamesList.innerHTML = '';
+      const savedGames = JSON.parse(localStorage.getItem('savedGames')) || {};
+      Object.entries(savedGames).forEach(([slot, game]) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <button onclick="loadGame(${slot})">
+            ${slot}: ${game.name} (${new Date(game.timestamp).toLocaleString()})
+          </button>
+        `;
+        savedGamesList.appendChild(li);
+      });
+    }
+
+    // Spiel laden
+    window.loadGame = function(slot) {
+      const savedGames = JSON.parse(localStorage.getItem('savedGames')) || {};
+      if (savedGames[slot]) {
+        gameState = savedGames[slot].gameState;
+        loadScreen.classList.remove('active');
+        gameScreen.classList.add('active');
+        renderScene(gameState.currentScene);
+      }
+    };
+
+    // Neues Spiel
+    document.getElementById('new-game').onclick = () => {
+      gameState = {
+        selectedParameters: {},
+        currentScene: "start",
+        stats: { mut: 0, logik: 0, empathie: 0, gerechtigkeit: 0 },
+        sceneVars: {},
+        inventory: [],
+        history: []
+      };
+      loadScreen.classList.remove('active');
+      parameterScreen.classList.add('active');
+    };
+
+    // Initialisierung
+    document.addEventListener('DOMContentLoaded', () => {
+      // Parameter-Optionen rendern
+      renderParameterOptions('alter', 'alter-options');
+      renderParameterOptions('beruf', 'beruf-options');
+      renderParameterOptions('genre', 'genre-options');
+      renderParameterOptions('fokus', 'fokus-options');
+      renderParameterOptions('stil', 'stil-options');
+      renderParameterOptions('konsequenz', 'konsequenz-options');
+      renderParameterOptions('ziel', 'ziel-options');
+
+      // Gespeicherte Spiele anzeigen (falls vorhanden)
+      renderSavedGames();
+    });
+  </script>
+</body>
+</html>
