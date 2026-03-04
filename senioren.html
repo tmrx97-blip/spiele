@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Senioren-Quiz - Level 65</title>
+    <style>
+        :root { --bg-color: #fdf6e3; --text-color: #2c3e50; --accent-color: #e67e22; --success-color: #27ae60; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        #game-container { width: 100%; max-width: 800px; background: #ffffff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 3px solid var(--accent-color); box-sizing: border-box; }
+        h1 { color: var(--accent-color); font-size: 2rem; text-align: center; margin-bottom: 5px; }
+        .round-info { text-align: center; font-weight: bold; margin-bottom: 20px; color: #7f8c8d; }
+        button { padding: 18px; font-size: 1.2rem; cursor: pointer; border: none; border-radius: 15px; background: var(--accent-color); color: white; font-weight: bold; width: 100%; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+        button.secondary { background: #7f8c8d; }
+        .question-box { font-size: 1.6rem; line-height: 1.3; margin-bottom: 20px; font-weight: bold; }
+        .hint-box { background: #f8f9fa; padding: 15px; border-left: 8px solid var(--accent-color); margin: 10px 0; font-size: 1.15rem; }
+        .result-box { display: none; background: #f0fff4; padding: 20px; border-radius: 15px; border: 3px solid var(--success-color); margin-top: 15px; }
+        .anecdote { color: #444; font-size: 1.1rem; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; font-style: italic; }
+        .joker-box { background: #fff9db; padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px dashed #f1c40f; }
+        #barometer-container { position: sticky; bottom: 10px; background: white; padding: 12px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-around; width: 90%; max-width: 350px; margin-top: 20px; border: 3px solid var(--text-color); }
+        .baro-btn { width: 60px; height: 60px; font-size: 2rem; border-radius: 50%; padding: 0; }
+        .hidden { display: none; }
+        .visible { display: block !important; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="setup-screen">
+            <h1>Senioren-Quiz</h1>
+            <p class="round-info">Niveau: Anspruchsvoll (65%)</p>
+            <p style="text-align:center; font-size: 1.2rem;">Bereit für 12 spannende Themen?</p>
+            <button onclick="startRound()">Spielrunde starten</button>
+        </div>
+
+        <div id="quiz-screen" class="hidden">
+            <div id="round-title" style="font-weight: bold; color: var(--accent-color); margin-bottom: 5px;"></div>
+            <div id="progress" style="margin-bottom: 15px; font-size: 0.9rem; color: #7f8c8d;"></div>
+            <div class="question-box" id="question-text"></div>
+            
+            <div id="hint-1" class="hint-box"><strong>Tipp 1:</strong> <span id="hint-1-text"></span></div>
+            <div id="hint-extra" class="hidden">
+                <div class="hint-box"><strong>Tipp 2:</strong> <span id="hint-2-text"></span></div>
+                <div class="hint-box"><strong>Tipp 3:</strong> <span id="hint-3-text"></span></div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <button id="btn-success" onclick="showResult(true)">Ich hab's!</button>
+                <button id="btn-more-hints" class="secondary" onclick="revealMoreHints()">Mehr Hinweise</button>
+                <button id="btn-solve" class="secondary" onclick="showResult(false)">Lösung zeigen</button>
+            </div>
+
+            <div id="result-area" class="result-box">
+                <h2 id="reward-title" style="margin:0; font-size: 1.4rem;"></h2>
+                <p id="solution-text" style="font-size: 1.3rem; font-weight: bold; margin: 10px 0;"></p>
+                <p id="anecdote-text" class="anecdote"></p>
+                <div class="joker-box">
+                    <strong>Erzähl-Impulse für euch:</strong>
+                    <ul id="joker-list" style="margin: 5px 0; padding-left: 20px;"></ul>
+                </div>
+                <button id="btn-next" onclick="nextStep()" style="margin-top: 20px; background: var(--text-color);">Nächste Frage</button>
+            </div>
+        </div>
+
+        <div id="end-screen" class="hidden">
+            <h1 id="end-title">Runde beendet!</h1>
+            <p id="final-stats" style="font-size: 1.3rem; text-align: center; margin: 25px 0;"></p>
+            <button id="btn-continue" onclick="prepareNextRound()">Nächste Runde (12 neue Fragen)</button>
+            <button id="btn-restart" class="hidden" onclick="location.reload()">Alles von vorn</button>
+        </div>
+    </div>
+
+    <div id="barometer-container" class="hidden">
+        <button class="baro-btn" style="background:#e74c3c" onclick="changeBaro(-1)">-</button>
+        <div style="text-align:center;">
+            <div style="font-size: 0.7rem; font-weight: bold;">BAROMETER</div>
+            <div id="baro-val" style="font-size: 1.8rem; font-weight: bold;">0</div>
+        </div>
+        <button class="baro-btn" style="background:#27ae60" onclick="changeBaro(1)">+</button>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, dur) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + dur);
+        }
+
+        // --- DER FRAGEN-POOL (Level 65%) ---
+        const fullPool = [
+            {
+                q: "Welches prächtige Bauwerk in Hamburg wurde 2017 nach fast 10 Jahren Bauzeit eröffnet und ist heute das Wahrzeichen der Stadt?",
+                h1: "Es steht mitten in der Elbe.", h2: "Es hat eine gläserne Fassade, die an Wellen erinnert.", h3: "Man nennt es auch liebevoll die 'Elphi'.",
+                sol: "Die Elbphilharmonie", anecdote: "Die Kosten stiegen von geplanten 77 Millionen auf über 800 Millionen Euro.",
+                joker: ["Bist du ein Fan von klassischer Musik?", "Warst du schon mal im Hamburger Hafen?"]
+            },
+            {
+                q: "Welche schwedische Klima-Aktivistin startete 2018 ganz allein einen Schulstreik, der zur Weltbewegung wurde?",
+                h1: "Sie reiste mit dem Segelboot über den Atlantik.", h2: "Ihr Vorname beginnt mit G.", h3: "Sie wurde mehrfach für den Friedensnobelpreis nominiert.",
+                sol: "Greta Thunberg", anecdote: "Ihr Pappschild 'Skolstrejk för klimatet' steht heute in einem Museum.",
+                joker: ["Was hältst du von dem Engagement der Jugend heute?", "Bist du früher für etwas auf die Straße gegangen?"]
+            },
+            {
+                q: "Welcher charismatische Argentinier wurde im Jahr 2013 zum neuen Papst gewählt?",
+                h1: "Er ist der erste Jesuit in diesem Amt.", h2: "Er ist für seine Bescheidenheit bekannt und verzichtete auf den Prunk.", h3: "Er trägt den Namen eines Heiligen, der Tiere sehr liebte.",
+                sol: "Papst Franziskus", anecdote: "Er trägt bis heute seine alten, schwarzen Schuhe statt der roten Papstschuhe.",
+                joker: ["Hast du den Rücktritt von Benedikt XVI. damals verfolgt?", "Was macht für dich ein gutes Oberhaupt aus?"]
+            },
+            {
+                q: "Welche Währung wurde im Jahr 2023 offiziell in Kroatien eingeführt?",
+                h1: "Damit verschwand die 'Kuna'.", h2: "Kroatien trat gleichzeitig dem Schengen-Raum bei.", h3: "Es ist die gemeinsame europäische Währung.",
+                sol: "Der Euro", anecdote: "Kroatien ist das 20. Land, das diese Währung nutzt.",
+                joker: ["Warst du schon mal in Kroatien im Urlaub?", "Vermisst du manchmal noch die D-Mark?"]
+            },
+            {
+                q: "Wie heißt die Herzogin, die 2018 Prinz Harry in einer prunkvollen Hochzeit auf Schloss Windsor heiratete?",
+                h1: "Sie war zuvor eine bekannte US-Schauspielerin.", h2: "Die beiden traten später von ihren royalen Pflichten zurück.", h3: "Ihr Vorname beginnt mit M.",
+                sol: "Meghan Markle", anecdote: "Die Hochzeit wurde weltweit von fast 2 Milliarden Menschen gesehen.",
+                joker: ["Interessierst du dich für die Königshäuser?", "Was hältst du von ihrer Entscheidung, nach Amerika zu ziehen?"]
+            },
+            {
+                q: "Welches Land stimmte 2016 in einer knappen Wahl für den Austritt aus der Europäischen Union?",
+                h1: "Das Ereignis ist als 'Brexit' bekannt.", h2: "Die Hauptstadt ist London.", h3: "Dort fährt man auf der linken Straßenseite.",
+                sol: "Großbritannien / Vereinigtes Königreich", anecdote: "Der Austritt wurde erst 2020 offiziell vollzogen.",
+                joker: ["Warst du schon mal in England?", "Glaubst du, dass der Austritt ein Fehler war?"]
+            },
+            {
+                q: "Welches soziale Netzwerk, das für kurze Nachrichten bekannt ist, wurde 2022 von Elon Musk gekauft und in 'X' umbenannt?",
+                h1: "Das Logo war früher ein kleiner blauer Vogel.", h2: "Dort wird 'gezwitschert'.", h3: "Es beginnt mit T...",
+                sol: "Twitter", anecdote: "Musk zahlte unglaubliche 44 Milliarden Dollar für das Unternehmen.",
+                joker: ["Nutzt du moderne Technik, um Nachrichten zu lesen?", "Wie informierst du dich über das Weltgeschehen?"]
+            },
+            {
+                q: "Welcher deutsche Astronaut verbrachte 2014 und 2018 insgesamt fast ein Jahr auf der Internationalen Raumstation ISS?",
+                h1: "Sein Spitzname ist 'Astro-Alex'.", h2: "Er fotografierte die Erde faszinierend schön von oben.", h3: "Er hat eine markante Glatze und kommt aus Künzelsau.",
+                sol: "Alexander Gerst", anecdote: "Er war der erste Deutsche, der das Kommando auf der ISS übernahm.",
+                joker: ["Hättest du als Kind gerne mal das Weltall besucht?", "Was fasziniert dich an der Raumfahrt?"]
+            },
+            {
+                q: "Wie heißt der britische König, der 2023 offiziell gekrönt wurde?",
+                h1: "Er ist der Sohn von Queen Elizabeth II.", h2: "Er setzte sich schon als Prinz für Bio-Landwirtschaft ein.", h3: "Er trägt den Namen Charles der ...",
+                sol: "König Charles III.", anecdote: "Bei seiner Krönung war er bereits 74 Jahre alt.",
+                joker: ["Hast du die Beisetzung der Queen verfolgt?", "Was denkst du über die Beständigkeit der Monarchie?"]
+            },
+            {
+                q: "Welches High-Tech-Teleskop schickte 2022 die ersten scharfen Bilder aus der Frühzeit des Universums zur Erde?",
+                h1: "Es ist der Nachfolger des Hubble-Teleskops.", h2: "Es blickt mit Infrarotlicht in die Vergangenheit.", h3: "Die Abkürzung lautet J-W-S-T.",
+                sol: "James-Webb-Teleskop", anecdote: "Es ist so empfindlich, dass es die Wärme einer Biene auf dem Mond messen könnte.",
+                joker: ["Glaubst du, wir sind allein im Universum?", "Was ist für dich die wichtigste Erfindung der letzten Jahre?"]
+            },
+            {
+                q: "In welchem Jahr feierte Deutschland das 30. Jubiläum des Mauerfalls?",
+                h1: "Es war kurz vor Beginn der Corona-Pandemie.", h2: "Ein Jahr mit der '9' am Ende.", h3: "201...",
+                sol: "2019", anecdote: "Eine Lichtgrenze aus 8.000 Ballons markierte damals den Mauerverlauf.",
+                joker: ["Wo warst du am 9. November 1989?", "Wie hat der Mauerfall dein Leben verändert?"]
+            },
+            {
+                q: "Welches Land war 2024 Gastgeber der Olympischen Sommerspiele?",
+                h1: "Die Eröffnung fand auf dem Fluss Seine statt.", h2: "Dort steht der Louvre und der Triumphbogen.", h3: "Es ist unser direkter Nachbar im Westen.",
+                sol: "Frankreich / Paris", anecdote: "Die olympischen Ringe hingen während der Spiele am Eiffelturm.",
+                joker: ["Welche Sportart magst du am liebsten?", "Warst du schon einmal in Paris?"]
+            }
+            // HIER KOMMEN NOCH 24 WEITERE FRAGEN HIN (siehe nächste Nachricht)
+        ];
+
+        let currentRound = 1;
+        let gamePool = [];
+        let sessionQuestions = [];
+        let currentIndex = 0;
+        let barometerScore = 0;
+
+        function startRound() {
+            if(currentRound === 1) gamePool = [...fullPool].sort(() => 0.5 - Math.random());
+            sessionQuestions = gamePool.splice(0, 12);
+            currentIndex = 0;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('barometer-container').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = sessionQuestions[currentIndex];
+            document.getElementById('round-title').innerText = `Runde ${currentRound} von 3`;
+            document.getElementById('progress').innerText = `Thema ${currentIndex + 1} von 12`;
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('hint-1-text').innerText = q.h1;
+            document.getElementById('hint-2-text').innerText = q.h2;
+            document.getElementById('hint-3-text').innerText = q.h3;
+            document.getElementById('hint-extra').classList.add('hidden');
+            document.getElementById('result-area').classList.remove('visible');
+            document.getElementById('btn-more-hints').style.display = 'block';
+            document.getElementById('btn-success').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        function revealMoreHints() { document.getElementById('hint-extra').classList.add('visible'); playTone(400, 0.1); }
+
+        function showResult(win) {
+            const q = sessionQuestions[currentIndex];
+            const res = document.getElementById('result-area');
+            res.classList.add('visible');
+            document.getElementById('reward-title').innerText = win ? "Wunderbar!" : "Schau an!";
+            document.getElementById('solution-text').innerText = `Antwort: ${q.sol}`;
+            document.getElementById('anecdote-text').innerText = q.anecdote;
+            document.getElementById('joker-list').innerHTML = q.joker.map(j => `<li>${j}</li>`).join('');
+            document.getElementById('btn-more-hints').style.display = 'none';
+            document.getElementById('btn-success').style.display = 'none';
+            playTone(win ? 600 : 300, 0.3);
+            setTimeout(() => res.scrollIntoView({behavior: "smooth"}), 150);
+        }
+
+        function nextStep() {
+            currentIndex++;
+            if(currentIndex < sessionQuestions.length) showQuestion();
+            else showRoundEnd();
+        }
+
+        function showRoundEnd() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-stats').innerText = `Runde ${currentRound} erfolgreich beendet! Dein Barometer steht auf ${barometerScore}.`;
+            if(currentRound >= 3) {
+                document.getElementById('end-title').innerText = "Spiel komplett beendet!";
+                document.getElementById('btn-continue').classList.add('hidden');
+                document.getElementById('btn-restart').classList.remove('hidden');
+            }
+        }
+
+        function prepareNextRound() {
+            currentRound++;
+            document.getElementById('end-screen').classList.add('hidden');
+            startRound();
+        }
+
+        function changeBaro(v) {
+            barometerScore += v;
+            document.getElementById('baro-val').innerText = barometerScore;
+            playTone(v > 0 ? 800 : 200, 0.1);
+        }
+    </script>
+</body>
+</html>
